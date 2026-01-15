@@ -23,7 +23,7 @@ class SummarizerService:
         }
         return instructions.get(style, instructions["Brief"])
 
-    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+    
     def summarize(self, text, style="Brief"):
         """
         Sends text to Google Gemini for summarization.
