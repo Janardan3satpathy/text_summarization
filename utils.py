@@ -10,12 +10,8 @@ class SummarizerService:
         if not api_key:
             raise ValueError("API Key is missing.")
         
-        # Configure the library with the user's API key
+       
         genai.configure(api_key=api_key)
-        
-        # Initialize the model (using gemini-1.5-flash for speed/efficiency)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
-
     def _get_system_instruction(self, style):
         """
         Returns the specific instruction based on style.
@@ -37,14 +33,14 @@ class SummarizerService:
 
         instruction = self._get_system_instruction(style)
         
-        # Construct the final prompt
+      
         full_prompt = f"{instruction}\n\n---\n\nText to summarize:\n{text}"
 
         try:
-            # Generate content
+            
             response = self.model.generate_content(full_prompt)
             
-            # Extract text from response
+            
             return response.text
 
         except exceptions.InvalidArgument as e:
