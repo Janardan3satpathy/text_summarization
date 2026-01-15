@@ -1,42 +1,78 @@
 import streamlit as st
-import google.generativeai as genai
-import sys
+from utils import SummarizerService
 
-st.set_page_config(page_title="Debug Mode", page_icon="🛠️")
-st.title("🛠️ Gemini Debugger")
+# Page Config
+st.set_page_config(page_title="Gemini Doc Summarizer", page_icon="✨")
 
-# 1. Check Library Version (Crucial!)
-st.subheader("1. System Info")
-st.write(f"**Python Version:** {sys.version.split()[0]}")
-try:
-    # If this is below 0.7.0, you will get 404 errors for Flash
-    st.write(f"**Google GenAI Library Version:** `{genai.__version__}`") 
-except AttributeError:
-    st.error("⚠️ Library is too old to show version! Update required.")
+# Title and Description
+st.title("✨ Gemini Document Summarizer")
+st.markdown("Upload a text file or paste text below to generate a summary using **Google Gemini**.")
 
-# 2. Check Available Models
-st.subheader("2. Check Available Models")
-st.markdown("Enter your key to see exactly which models Google allows this server to use.")
+# Sidebar for Configuration
+with st.sidebar:
+    st.header("Configuration")
+    api_key = st.text_input("Google API Key", type="password", help="Get your key from Google AI Studio.")
+    
+    st.markdown("---")
+    st.markdown("### Options")
+    summary_style = st.selectbox(
+        "Summarization Style",
+        ("Brief", "Detailed", "Bullet Points")
+    )
+    st.caption("Model: gemini-1.5-flash")
 
-api_key = st.text_input("Google API Key", type="password")
+# Main Input Area
+input_method = st.radio("Choose input method:", ("Paste Text", "Upload File"))
 
-if st.button("List My Models"):
-    if not api_key:
-        st.warning("Please enter a key.")
-    else:
+text_input = ""
+
+if input_method == "Paste Text":
+    text_input = st.text_area("Paste your text here:", height=200)
+else:
+    uploaded_file = st.file_uploader("Choose a .txt file", type=['txt'])
+    if uploaded_file is not None:
         try:
-            genai.configure(api_key=api_key)
-            
-            # Try to list models
-            all_models = list(genai.list_models())
-            chat_models = [m.name for m in all_models if 'generateContent' in m.supported_generation_methods]
-            
-            if chat_models:
-                st.success(f"✅ Success! The API Key works. Found {len(chat_models)} compatible models.")
-                st.markdown("### Copy one of these names exactly into your `utils.py`:")
-                st.code("\n".join(chat_models))
-            else:
-                st.error("⚠️ Connection successful, but NO chat models were found. This API key might be restricted.")
-                
+            text_input = uploaded_file.getvalue().decode("utf-8")
+            st.success("File uploaded successfully!")
+            with st.expander("View uploaded text"):
+                st.text(text_input)
         except Exception as e:
-            st.error(f"❌ Connection Failed: {e}")
+            st.error(f"Error reading file: {e}")
+
+# Summarize Button
+if st.button("Generate Summary", type="primary"):
+    # 1. Validation: Check API Key
+    if not api_key:
+        st.warning("⚠️ Please enter your Google API Key in the sidebar.")
+    
+    # 2. Validation: Check Input Text
+    elif not text_input.strip():
+        st.warning("⚠️ Please provide some text to summarize.")
+    
+    else:
+        with st.spinner("Gemini is analyzing..."):
+            try:
+                # Initialize Service
+                summarizer = SummarizerService(api_key)
+                
+                # Get Summary
+                summary = summarizer.summarize(text_input, summary_style)
+                
+                # Display Result
+                st.subheader("Summary Result")
+                st.markdown(summary) # Markdown works well with Gemini's output
+                
+                # Option to download summary
+                st.download_button(
+                    label="Download Summary",
+                    data=summary,
+                    file_name="gemini_summary.txt",
+                    mime="text/plain"
+                )
+                
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
+
+# Footer
+st.markdown("---")
+st.caption("Simple Document Summarization Service | Built with Streamlit & Google Gemini")
