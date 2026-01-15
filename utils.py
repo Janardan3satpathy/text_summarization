@@ -10,8 +10,13 @@ class SummarizerService:
         if not api_key:
             raise ValueError("API Key is missing.")
         
-       
+        # Configure the library with the user's API key
         genai.configure(api_key=api_key)
+        
+        # Initialize the model 
+        # We are using 'gemini-2.0-flash' because your debug list confirmed you have access to it.
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
+
     def _get_system_instruction(self, style):
         """
         Returns the specific instruction based on style.
@@ -23,7 +28,9 @@ class SummarizerService:
         }
         return instructions.get(style, instructions["Brief"])
 
-    
+    # We removed the @retry decorator temporarily to make debugging easier. 
+    # If you want it back later, you can uncomment the line below.
+    # @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     def summarize(self, text, style="Brief"):
         """
         Sends text to Google Gemini for summarization.
@@ -33,14 +40,17 @@ class SummarizerService:
 
         instruction = self._get_system_instruction(style)
         
-      
+        # Construct the final prompt
         full_prompt = f"{instruction}\n\n---\n\nText to summarize:\n{text}"
 
         try:
-            
+            # Generate content
+            if not hasattr(self, 'model'):
+                raise Exception("Model was not initialized correctly in __init__")
+
             response = self.model.generate_content(full_prompt)
             
-            
+            # Extract text from response
             return response.text
 
         except exceptions.InvalidArgument as e:
