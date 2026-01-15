@@ -14,7 +14,7 @@ class SummarizerService:
         genai.configure(api_key=api_key)
         
         # Initialize the model (using gemini-1.5-flash for speed/efficiency)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-pro')
 
     def _get_system_instruction(self, style):
         """
