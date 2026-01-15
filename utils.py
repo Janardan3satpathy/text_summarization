@@ -14,7 +14,7 @@ class SummarizerService:
         genai.configure(api_key=api_key)
         
         # Initialize the model (using gemini-1.5-flash for speed/efficiency)
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def _get_system_instruction(self, style):
         """
@@ -27,7 +27,7 @@ class SummarizerService:
         }
         return instructions.get(style, instructions["Brief"])
 
-    
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     def summarize(self, text, style="Brief"):
         """
         Sends text to Google Gemini for summarization.
